@@ -6,7 +6,15 @@ var GameLayer = cc.LayerColor.extend({
         this.ship = new Ship();
         this.ship.setPosition( new cc.Point( 700, 300 ) );
         this.addChild( this.ship );
+        this.initBullet();
+        this.initLife();        
+        this.addKeyboardHandlers();
+        this.scheduleUpdate();
+        
+        return true;
+    },
 
+    initBullet: function(){
         this.bullets = [];
         for ( var i = 0; i < 15; i++ ) {
             var p = Math.random();
@@ -25,12 +33,6 @@ var GameLayer = cc.LayerColor.extend({
 
             this.bullets.push( bullet );
         }
-
-        this.initLife();        
-        this.addKeyboardHandlers();
-        this.scheduleUpdate();
-        
-        return true;
     },
 
     initLife: function() {
@@ -46,41 +48,26 @@ var GameLayer = cc.LayerColor.extend({
         this.bullets.forEach( function( bullet, i ) {
             var x = bullet.getPositionX();
             if ( ( x < screenWidth ) &&
-                 ( x > screenWidth - 100 ) ) {
+               ( x > screenWidth - 100 ) ) {
                 var y = bullet.getPositionY();
-                if ( Math.abs( y - self.ship.getPositionY() ) < 25 ) {
+                if ( self.isHit(y) ) {
                     bullet.randomPosition();
                     self.life -= 1;
                     self.lifeLabel.setString( self.life );
-                    if ( self.life == 0 ) {
-                        var gameOverLabel = cc.LabelTTF.create( 'Game over', 'Arial', 60 );
-                        gameOverLabel.setPosition( cc.p( 400, 300 ) );
-                        self.addChild( gameOverLabel );
-                        cc.director.pause();
-                    }
-                    return;
                 }
             }
             if ( x > screenWidth ) {
                 bullet.randomPosition();
-            }
-        });
+            }    });
+        this.GameOver();
+    },
+
+    isHit: function(position){
+        return Math.abs( position - this.ship.getPositionY() ) < 25
     },
     
     onKeyDown: function( keyCode, event ) {
-        if ( keyCode == cc.KEY.up ) {
-            var y = this.ship.getPositionY();
-            if ( y < screenHeight - 10 ) {
-                y += 10;
-                this.ship.setPositionY( y );
-            }
-        } else if ( keyCode == cc.KEY.down ) {
-            var y = this.ship.getPositionY();
-            if ( y > 10 ) {
-                y -= 10;
-                this.ship.setPositionY( y );
-            }
-        }
+        this.ship.move( keyCode );
     },
     
     onKeyUp: function( keyCode, event ) {
@@ -97,9 +84,21 @@ var GameLayer = cc.LayerColor.extend({
                 self.onKeyUp( keyCode, event );
             }
         }, this);
+    },
+
+    GameOver: function(){
+        if ( this.life == 0 ) {
+            var gameOverLabel = cc.LabelTTF.create( 'Game over', 'Arial', 60 );
+            gameOverLabel.setPosition( cc.p( 400, 300 ) );
+            this.addChild( gameOverLabel );
+            cc.director.pause();
+        }
     }
+
+
+
 });
- 
+
 var StartScene = cc.Scene.extend({
     onEnter: function() {
         this._super();
